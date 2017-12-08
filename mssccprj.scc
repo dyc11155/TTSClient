@@ -1,0 +1,5 @@
+SCC = This is a Source Code Control file
+
+[TTSClient.dsp]
+SCC_Aux_Path = "\\192.168.2.53\vsstx\"
+SCC_Project_Name = "$/开发库/其他/TTS封装/TTSClient", DRHIAAAA
