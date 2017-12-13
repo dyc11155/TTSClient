@@ -92,6 +92,7 @@ public:
 		int cnt = m_editLog.GetLineCount();
 		m_editLog.LineScroll(cnt, 0);
 	}
+	afx_msg void OnBnClickedBtnSyntheticvoice();
 };
 
 //{{AFX_INSERT_LOCATION}}

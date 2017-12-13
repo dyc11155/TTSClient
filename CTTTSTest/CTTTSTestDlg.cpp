@@ -90,6 +90,7 @@ BEGIN_MESSAGE_MAP(CCTTTSTestDlg, CDialog)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BUTTON1, &CCTTTSTestDlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CCTTTSTestDlg::OnBnClickedReadExcel)
+	ON_BN_CLICKED(IDC_BTN_SYNTHETICVOICE, &CCTTTSTestDlg::OnBnClickedBtnSyntheticvoice)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -125,6 +126,14 @@ BOOL CCTTTSTestDlg::OnInitDialog()
 	// TODO: Add extra initialization here
 	GetDlgItem(IDC_EDIT_DLL)->SetWindowText("TTSClient.dll");
 	GetDlgItem(IDC_EDIT_CONTENT)->SetWindowText("TTS测试测试");
+	GetDlgItem(IDC_EDIT1)->SetWindowText("A");
+	GetDlgItem(IDC_EDIT2)->SetWindowText("B");
+	GetDlgItem(IDC_EDIT3)->SetWindowText("1");
+	GetDlgItem(IDC_EDIT4)->SetWindowText("2");
+	GetDlgItem(IDC_EDIT5)->SetWindowText("1");
+	GetDlgItem(IDC_EDIT6)->SetWindowText("2");
+	GetDlgItem(IDC_EDIT8)->SetWindowText("F:\\bjzx.xlsx");
+	GetDlgItem(IDC_EDIT9)->SetWindowText("1");
 
 	//CString sDllName = "TTSClient.dll";
 	////GetDlgItem(IDC_EDIT_DLL)->GetWindowText(sDllName);
@@ -414,14 +423,182 @@ void CCTTTSTestDlg::OnBnClickedReadExcel()
 		::WritePrivateProfileStringA("VALUE",sFileNameResult,sFileContentResult,"D:\\tts.ini");
 		sLog.Format("<<循环结束i=%d，开始%d，结束%d>>",i,fileColumnStartNum,fileColumnEndNum);
 		this->PrintLog(sLog);
+		
 	}
 
 	this->PrintLog(_T("=============全部完成============"));
 
     book.put_Saved(TRUE); 
-    app.Quit();
-	app.DetachDispatch();
+	book.Close(covOptional,covOptional,covOptional);
+	books.Close();	
+	app.Quit();
+	range.ReleaseDispatch();
+	sheet.ReleaseDispatch();
+	sheets.ReleaseDispatch();
+	book.ReleaseDispatch();
+	books.ReleaseDispatch();
+	//app.DetachDispatch();
 	app.ReleaseDispatch();
 	CoInitialize(NULL);
 	
+}
+
+
+void CCTTTSTestDlg::OnBnClickedBtnSyntheticvoice()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString sDllName = "";
+	GetDlgItem(IDC_EDIT_DLL)->GetWindowText(sDllName);
+
+	HMODULE hSApi = NULL;
+	hSApi = LoadLibrary(_T(sDllName));
+	if(hSApi == NULL) 
+	{
+		AfxMessageBox("加载dll出错");
+		return;
+	}
+
+
+	this->PrintLog(_T("===============开始读取EXCEL============"));
+	
+	int fileColumnStartNum = 0;
+	int fileColumnEndNum = 0;
+	int contentColumnStartNum = 0;
+	int contentColumnEndNum = 0;
+
+	
+	CString sLog = _T("");
+	CString sFileColumn = _T("");
+	CString sContentColumn = _T("");
+	CString sFileColumnStartNum = _T("");
+	CString sFileColumnEndNum = _T("");
+	CString sContentColumnStartNum = _T("");
+	CString sContentColumnEndNum = _T("");
+	CString sExcelPath = _T("");
+	CString sExcelSheetNum = _T("");
+	GetDlgItem(IDC_EDIT1)->GetWindowTextA(sFileColumn);
+	GetDlgItem(IDC_EDIT2)->GetWindowTextA(sContentColumn);
+	GetDlgItem(IDC_EDIT3)->GetWindowTextA(sFileColumnStartNum);
+	GetDlgItem(IDC_EDIT4)->GetWindowTextA(sFileColumnEndNum);
+	GetDlgItem(IDC_EDIT5)->GetWindowTextA(sContentColumnStartNum);
+	GetDlgItem(IDC_EDIT6)->GetWindowTextA(sContentColumnEndNum);
+	GetDlgItem(IDC_EDIT8)->GetWindowTextA(sExcelPath);
+	GetDlgItem(IDC_EDIT9)->GetWindowTextA(sExcelSheetNum);
+
+	if(sFileColumn == _T("")||sContentColumn == _T("")||sFileColumnStartNum == _T("")||sFileColumnEndNum == _T("")||sContentColumnStartNum == _T("")||sContentColumnEndNum == _T(""))
+	{
+		this->MessageBox(_T("请输入信息"));
+		return;
+	}
+
+	fileColumnStartNum = atoi(sFileColumnStartNum);
+	fileColumnEndNum = atoi(sFileColumnEndNum);
+	contentColumnStartNum = atoi(sFileColumnStartNum);
+	contentColumnEndNum = atoi(sFileColumnEndNum);
+	
+	this->PrintLog(_T("读取数据完成"));
+
+	//导入
+    COleVariant covOptional((long)DISP_E_PARAMNOTFOUND,VT_ERROR); 
+    if (!app.CreateDispatch(_T("Excel.Application")))
+    {   
+        this->MessageBox(_T("无法创建Excel应用！")); 
+        return;  
+    }
+    books = app.get_Workbooks(); 
+    //打开Excel，其中pathname为Excel表的路径名  
+    lpDisp = books.Open(sExcelPath,covOptional ,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional,covOptional);
+    book.AttachDispatch(lpDisp); 
+    sheets = book.get_Worksheets(); 
+    sheet = sheets.get_Item(COleVariant((short)atoi(sExcelSheetNum))); 
+
+	this->PrintLog(_T("打开文件完成"));
+    
+	//获得坐标为（A，1）的单元格 ,获取并写入-----文件名=文件位置
+	for(int i = fileColumnStartNum;i <= fileColumnEndNum;i++)
+	{
+		sLog.Format("<<循环开始i=%d，开始%d，结束%d>>",i,fileColumnStartNum,fileColumnEndNum);
+		this->PrintLog(sLog);
+		CString sFileName = _T("");
+		CString sFileContent = _T("");
+		CString sFileNameResult = _T("");
+		CString sFileContentResult = _T("");
+		//获取文件名
+		sFileName.Format("%s%d",sFileColumn,i);
+		sLog.Format("读取单元格为：%s",sFileName);
+		this->PrintLog(sLog);
+		range = sheet.get_Range(COleVariant(sFileName) ,COleVariant(sFileName));  
+		//获得单元格的内容 
+		COleVariant rValue;
+		rValue =   COleVariant(range.get_Value2()); 
+		//转换成宽字符  
+		rValue.ChangeType(VT_BSTR); 
+		//转换格式，并输出 
+		sFileNameResult = CString(rValue.bstrVal);
+		sLog.Format("文件名为：%s",sFileNameResult);
+		this->PrintLog(sLog);
+		
+		//获取文件内容
+		sFileContent.Format("%s%d",sContentColumn,i);
+		sLog.Format("读取单元格为：%s",sFileContent);
+		this->PrintLog(sLog);
+		range = sheet.get_Range(COleVariant(sFileContent) ,COleVariant(sFileContent));  
+		//获得单元格的内容 
+		//COleVariant rValue;
+		rValue =   COleVariant(range.get_Value2()); 
+		//转换成宽字符  
+		rValue.ChangeType(VT_BSTR); 
+		//转换格式，并输出 
+		sFileContentResult = CString(rValue.bstrVal);
+		sLog.Format("文件名为：%s",sFileContentResult);
+		this->PrintLog(sLog);
+
+		sFileNameResult = _T("F:\\bjzx\\") + sFileNameResult;
+
+		//this->MessageBox(CString(rValue.bstrVal));
+		/*CString value;
+		value = CString(rValue.bstrVal);*/
+		
+
+
+		this->PrintLog(_T("===========开始合成语音。。。。========"));
+		if(sDllName.CompareNoCase("TTSClient.dll")==0)
+		{
+			String2AudioFile ProcS2F = (String2AudioFile)GetProcAddress(hSApi, "String2AudioFile"); 
+			if(NULL != ProcS2F)
+			{
+
+				//GetDlgItem(IDC_EDIT_CONTENT)->GetWindowText(sContent);
+				int nRet = (ProcS2F) ((LPSTR)(LPCSTR)sFileContentResult,(LPSTR)(LPCSTR)sFileNameResult); 
+				//sRet.Format("调用返回%d", nRet);
+				//GetDlgItem(IDC_EDIT_IP)->SetWindowText(sRet);
+			} 
+		} else if(sDllName.CompareNoCase("TTStranslate.dll")==0) {
+		} 
+
+		this->PrintLog(_T("===========合成结束========="));
+
+		::WritePrivateProfileStringA("VALUE",sFileNameResult,sFileContentResult,"D:\\tts.ini");
+		sLog.Format("<<循环结束i=%d，开始%d，结束%d>>",i,fileColumnStartNum,fileColumnEndNum);
+		this->PrintLog(sLog);
+
+		
+	}
+
+	this->PrintLog(_T("=============全部完成============"));
+
+	
+    book.put_Saved(TRUE);
+	book.Close(covOptional,covOptional,covOptional);
+	books.Close();	
+    app.Quit();
+	range.ReleaseDispatch();
+	sheet.ReleaseDispatch();
+	sheets.ReleaseDispatch();
+	book.ReleaseDispatch();
+	books.ReleaseDispatch();
+	//app.DetachDispatch();
+	app.ReleaseDispatch();
+	CoInitialize(NULL);
+	FreeLibrary(hSApi);	
 }
